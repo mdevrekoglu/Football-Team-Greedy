@@ -8,7 +8,7 @@ import java.io.IOException;
 public class Mehmet_Devrekoglu_2020510028 {
 
     // A dynamic programming approach to find optimal solution
-    public static int dp(int n, int p, int c, int[] playerSalaries, int[] playerDemands) {
+    public static int Greedy(int n, int p, int c, int[] playerSalaries, int[] playerDemands) {
 
         // A cumilative array for the remaning players
         // It makes very faster to check if you can take a player from the previous year
@@ -20,7 +20,7 @@ public class Mehmet_Devrekoglu_2020510028 {
         int min = Integer.MAX_VALUE;
 
         // To find optimal solution we assign current year's cost due to change of limit
-        double[][] arr;
+        double cost = 0;
 
         // Calculating cumilative array
         for (int i = 1; i < remaningPlayer.length; i++) {
@@ -50,12 +50,13 @@ public class Mehmet_Devrekoglu_2020510028 {
         }
 
         // For debugging
-        /* 
+        /*
         for (int i = 1; i <= n; i++) {
             System.out.printf("(%d) difference between produced and demands: (%d)\n", i, (p - playerDemands[i]));
         }
         System.out.println();
         */
+        
         
         // If minimum value is negative, it means that your problem includes negative values
         // Which means you have to take players from the previous year or you have to train new players
@@ -70,89 +71,55 @@ public class Mehmet_Devrekoglu_2020510028 {
         // c-> cost of a coach for a year
         // playerSalaries-> array of salaries of players for a year for each number of players
         // playerDemands-> array of demands of players for each year
-        arr = new double[min + 2][n + 1]; // +1 for 0th year, +1 for 0 players (min)
-        
-        for(int i = 1; i <= min + 1; i++){
-            int[] remaningPlayerCopy = remaningPlayer.clone();
-            for (int j = n; j >= 1; j--) {
-                
-                // Difference between produced and demands
-                int difference = p - playerDemands[j];
+        for (int i = n; i >= 1; i--) {
+            
+            int difference = p - playerDemands[i]; // Difference between produced and demands
+            int[] remaningPlayerCopy = remaningPlayer.clone(); // Copy of remaning players array
+            
+            if(difference < 0){
+                int index = findIndex(remaningPlayerCopy, i - 1); // Index of the first non-zero element in the remaning players array
 
-                // If difference is positive or zero, it means that you have more players than you need
-                // So you can take the cost of the previous year
-                if(difference >= 0){
-                    arr[i][j] = arr[i][(j != n) ? j + 1 : j];
-                }
-                // if difference is negative, it means that you have less players than you need
-                // And there is two options, hiring player from previous year or hiring new coachs to train player
-                else{ 
-                    
-                    // There are three limits for the difference
-                    // It can take maximum i-1 players from the previous year
-                    // It can take maximum the difference between produced and demands
-                    // It can take maximum the remaning players from the previous year
-                    double cost = 0;
+                if(remaningPlayerCopy[(i != n) ? i + 1 : i] < 0){
 
-                    // Find the limit
-                    int limit = Math.min(Math.min(i - 1, difference * -1), remaningPlayerCopy[j - 1]);
-                    // Find the first index which is '0'
-                    int index = findIndex(remaningPlayerCopy, j - 1);
-
-                    // For debugging
-                    // System.out.println("Limit: " + limit);
-
-                    // If next year taken players, you must take what is left from the previous year
-                    // Because holding one more year is more expensive than taking a player from the previous year
-                    // So it must be more efficient to take a player from the previous year
-                    // Therefore limit rule is not applied in this part
-                    if(remaningPlayerCopy[(j != n) ? j + 1 : j] < 0){
-                        
-                        for (int k = index; k < j; k++) {
-                            if(remaningPlayerCopy[k] +  remaningPlayerCopy[(j != n) ? j + 1 : j] >= difference * -1){
-                                cost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) (difference * -1) / (double) remaningPlayerCopy[k];
-                            }else if(remaningPlayerCopy[k] + remaningPlayerCopy[(j != n) ? j + 1 : j] > 0
-                                 && remaningPlayerCopy[k] + remaningPlayerCopy[(j != n) ? j + 1 : j] < difference * -1){
-                                cost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) (remaningPlayerCopy[k] + remaningPlayerCopy[(j != n) ? j + 1 : j]) / (double) remaningPlayerCopy[k];
-                            }
+                    // Calculate cost of taking players from the previous year
+                    for (int k = index; k < i; k++) {
+                        if(remaningPlayerCopy[k] +  remaningPlayerCopy[(i != n) ? i + 1 : i] >= difference * -1){
+                            cost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) (difference * -1) / (double) remaningPlayerCopy[k];
+                        }else if(remaningPlayerCopy[k] + remaningPlayerCopy[(i != n) ? i + 1 : i] > 0
+                             && remaningPlayerCopy[k] + remaningPlayerCopy[(i != n) ? i + 1 : i] < difference * -1){
+                            cost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) (remaningPlayerCopy[k] + remaningPlayerCopy[(i != n) ? i + 1 : i]) / (double) remaningPlayerCopy[k];
                         }
-
-                        // Assign the cost
-                        arr[i][j] = arr[i][(j != n) ? j + 1 : j] + cost;
-
-                        // Assign total number of players taken from the previous years
-                        remaningPlayerCopy[j] = difference + remaningPlayerCopy[(j != n) ? j + 1 : j];
-
-                        // Print how many players taken from the previous years and how many coaches hired
-                        if(i == min + 1){
-                            System.out.printf("(%d) %d Coachs hired, %d Players taken from the previous years\n", j
-                            , difference * -1 - remaningPlayerCopy[j - 1], remaningPlayerCopy[j - 1]);
-                        }
-
-                        // Dont need to check the rest of the code
-                        continue;
                     }
-                    
-                    
-                    int num = -1;
-                    // If the limit is 0,
-                    // it means that you can't take any player from the previous year
-                    if(limit == i - 1){
-                        num = remaningPlayerCopy[j - 1] - limit;
-                    }
+
+                    // Assign total number of players taken from the previous years
+                    remaningPlayerCopy[i] = difference + remaningPlayerCopy[(i != n) ? i + 1 : i];
+
+                    // Print how many players taken from the previous years and how many coaches hired
+                    System.out.printf("(%d) %d Coachs hired, %d Players taken from the previous years\n", i
+                    , difference * -1 - remaningPlayerCopy[i - 1], remaningPlayerCopy[i - 1]);
+
+                }else{
+
+                    // Find the minimum value
+                    int limit = Math.min(difference * -1, remaningPlayerCopy[i - 1]);
+                    // To find out if calculated cost is less than the cost of training new players
+                    double tempCost = 0;
+                    // To remove the players that will not be taken from the remaning players
+                    int num = 0;
+
                     // If the limit is difference * -1, it means that
                     // You can maximum take diffrence * -1 players from the previous year
-                    else if(limit == difference * -1){
-                        num = remaningPlayerCopy[j - 1] - limit;
+                    if(limit == difference * -1){
+                        num = remaningPlayerCopy[i - 1] - limit;
                     }
                     // If the limit is remaning players from the previous year,
                     // It means that you can maximum take remaning players from the previous year
-                    else if(limit == remaningPlayerCopy[j - 1]){
-                        num = remaningPlayerCopy[j - 1] - limit;
+                    else if(limit == remaningPlayerCopy[i - 1]){
+                        num = remaningPlayerCopy[i - 1] - limit;
                     }
 
                     // Remove the player that will not be taken from the remaning players
-                    for(int k = index; k < j; k++){
+                    for(int k = index; k < i; k++){
                         if(remaningPlayerCopy[k] <= num){
                             remaningPlayerCopy[k] = 0;
                         }else{
@@ -161,62 +128,47 @@ public class Mehmet_Devrekoglu_2020510028 {
                     }
 
                     // Calculate the cost for this year
-                    cost += ((difference * -1) - remaningPlayerCopy[j - 1]) * c;
-                    for(int k = index; k < j; k++){
-                        if(remaningPlayerCopy[k] <= remaningPlayerCopy[j - 1]){
-                            cost += (double) playerSalaries[remaningPlayerCopy[k]];
+                    tempCost += ((difference * -1) - remaningPlayerCopy[i - 1]) * c;
+                    for(int k = index; k < i; k++){
+                        if(remaningPlayerCopy[k] <= remaningPlayerCopy[i - 1]){
+                            tempCost += (double) playerSalaries[remaningPlayerCopy[k]];
                         }else{
-                            cost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) remaningPlayerCopy[j - 1] / (double) remaningPlayerCopy[k];
+                            tempCost += (double) playerSalaries[remaningPlayerCopy[k]] * (double) remaningPlayerCopy[i - 1] / (double) remaningPlayerCopy[k];
                         }
                     }
 
-                    // Calculate the cost for the previous years
-                    double previousYearsCost = arr[i - 1][j] - arr[i - 1][(j != n) ? j + 1 : 0];
+                    if(tempCost < (difference * -1) * c){
 
-                    // Print how many players taken from the previous years and how many coaches hired
-                    if(i == min + 1){
-                        System.out.printf("(%d) %d Coachs hired, %d Players taken from the previous years\n", j
-                        , difference * -1 - remaningPlayerCopy[j - 1], remaningPlayerCopy[j - 1]);
-                    }
-
-                    // If the limit is 0 cost has to be calculated value
-                    if(i == 1){
-                        arr[i][j] = cost + arr[i][(j != n) ? j + 1 : j];
-                    }else if(cost <= previousYearsCost){ // cost < arr[i - 1][j] && remaningPlayerCopy[j - 1] != 0
-                        
-                        // Assign total cost
-                        arr[i][j] = cost + arr[i][(j != n) ? j + 1 : j];
-                        
+                        // Add the cost to the total cost
+                        cost += tempCost;
                         // Assign negative value to the remaning players to check if it is taken from the previous year for the next years
-                        if(remaningPlayerCopy[j - 1] != 0){
-                            remaningPlayerCopy[j] = remaningPlayerCopy[j - 1] * -1;
+                        if(remaningPlayerCopy[i - 1] != 0){
+                            remaningPlayerCopy[i] = remaningPlayerCopy[i - 1] * -1;
                         }
-                                              
                     }else{
 
-                        // If previous calculated value is smaller than the calculated value
-                        // It means that you have to take the previous value
-                        arr[i][j] = previousYearsCost + arr[i][(j != n) ? j + 1 : j];
-
+                        // Calculate the cost for this year
+                        cost += (difference * -1) * c;
                         // Remove the player that will not be taken from the remaning players
-                        for(int k = index; k < j; k++){
-                            if(remaningPlayerCopy[k] <= remaningPlayerCopy[j - 1]){
+                        for(int k = index; k < i; k++){
+                            if(remaningPlayerCopy[k] <= remaningPlayerCopy[i - 1]){
                                 remaningPlayerCopy[k] = 0;
                             }else{
-                                remaningPlayerCopy[k] -= remaningPlayerCopy[j - 1];
+                                remaningPlayerCopy[k] -= remaningPlayerCopy[i - 1];
                             }
                         }
                     }
+
+                    // Print how many players taken from the previous years and how many coaches hired           
+                    System.out.printf("(%d) %d Coachs hired, %d Players taken from the previous years\n", i
+                    , difference * -1 - remaningPlayerCopy[i - 1], remaningPlayerCopy[i - 1]);       
                 }
             }
         }
 
-        // For debugging
-        // printInt2Arr(arr);
-
         // Return left bottom value
         // Because algorithm works top to bottom
-        return (int)arr[min + 1][1];
+        return (int)cost;
     }
 
     // This is an essential method for the algorithm
@@ -284,25 +236,6 @@ public class Mehmet_Devrekoglu_2020510028 {
         return lines; // Returning the number of lines in the file
     }
 
-    // Function prints given 2D array
-    public static void printInt2Arr(double[][] arr){
-        
-        System.out.println();
-        System.out.print("\t");
-        for (int i = 0; i < arr[0].length; i++) {
-            System.out.printf("%d.\t", i);
-        }
-        System.out.println();
-
-        for(int i = 0; i < arr.length; i++){
-            System.out.printf("%d.\t", i);
-            for(int j = 0; j < arr[i].length; j++){
-                System.out.printf("%.2f\t", arr[i][j]);
-            }
-            System.out.println();
-        }
-    }
-
     public static void main(String[] args) {
 
         System.out.println("\nHello World!");
@@ -315,8 +248,10 @@ public class Mehmet_Devrekoglu_2020510028 {
         int p = 5; // p-> number of players you raise in a year
         int c = 10; // c-> cost of a coach for a year
 
-        // Call DP function
-        int minimumCost = dp(n, p, c, playerSalaries, playerDemands);
+        // Call Greedy function
+        long startTime = System.nanoTime();
+        int minimumCost = Greedy(n, p, c, playerSalaries, playerDemands);
+        long endTime = System.nanoTime();
         System.out.println();
 
         // Printing the results
@@ -324,5 +259,6 @@ public class Mehmet_Devrekoglu_2020510028 {
         System.out.println("Number of players you raise in a year: " + p);
         System.out.println("Cost of a coach for a year: " + c);
         System.out.println("Minimum cost: " + minimumCost);
+        System.out.println("Time: " + (endTime - startTime) / 1000000 + " ms");
     }
 }
